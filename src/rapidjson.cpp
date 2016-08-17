@@ -24,6 +24,7 @@
 #include "rapidjson/filewritestream.h"
 #include "rapidjson/rapidjson.h"
 #include "rapidjson/reader.h"
+#include "rapidjson/schema.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/prettywriter.h"
@@ -33,6 +34,10 @@ using namespace rapidjson;
 #ifndef LUA_RAPIDJSON_VERSION
 #define LUA_RAPIDJSON_VERSION "scm"
 #endif
+
+// -----------------------------------------------------------------------------
+// INFRASTRUCTURE
+// -----------------------------------------------------------------------------
 
 static const char* JSON_TABLE_TYPE_FIELD = "__jsontype";
 enum json_table_type {
@@ -144,6 +149,10 @@ static int json_array(lua_State* L)
 {
 	return makeTableType(L, 1, JSON_TABLE_TYPE_ARRAY);
 }
+
+// -----------------------------------------------------------------------------
+// DECODE
+// -----------------------------------------------------------------------------
 
 
 struct Ctx {
@@ -332,6 +341,10 @@ static int json_load(lua_State* L)
 	fclose(fp);
 	return n;
 }
+
+// -----------------------------------------------------------------------------
+// ENCODE
+// -----------------------------------------------------------------------------
 
 struct Key
 {
@@ -655,6 +668,57 @@ static int json_dump(lua_State* L)
 	return 0;
 }
 
+// -----------------------------------------------------------------------------
+// JSON SCHEMA VALIDATION
+// -----------------------------------------------------------------------------
+
+// http://rapidjson.org/md_doc_schema.html
+class JSONSchemaValidator
+{
+  const char* schema;
+  const char* json_document;
+
+public:
+  JSONSchemaValidator(const char* scm, const char* doc)
+    : schema{scm}, json_document{doc} {}
+
+  bool validate(lua_State* L)
+  {
+    Document sd;
+    if (sd.Parse(schema).HasParseError()) {
+      return luaL_error(L, "The JSON Schema is not a valid JSON document.");
+    }
+
+    SchemaDocument schema_doc(sd);
+    SchemaValidator validator(schema_doc);
+    Document d;
+
+    if (d.Parse(json_document).HasParseError()) {
+      return luaL_error(L, "Invalid JSON document.");
+    }
+
+    if (!d.Accept(validator)) {
+      return false;
+    }
+
+    return true;
+  }
+};
+
+static int schema_validate(lua_State* L)
+{
+  const char* scm = luaL_checkstring(L, 1);
+  const char* doc = luaL_checkstring(L, 2);
+
+  auto validator = new JSONSchemaValidator(scm, doc);
+  lua_pushboolean(L, validator->validate(L));
+
+  return 1;
+}
+
+// -----------------------------------------------------------------------------
+// LUA MODULE INFRASTRUCTURE
+// -----------------------------------------------------------------------------
 
 static const luaL_Reg methods[] = {
 	// string <--> json
@@ -664,6 +728,9 @@ static const luaL_Reg methods[] = {
 	// file <--> json
 	{ "load", json_load },
 	{ "dump", json_dump },
+
+  // schema
+	{ "schema_validate", schema_validate },
 
 	// special tags place holder
 	{ "null", json_null },

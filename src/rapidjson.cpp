@@ -711,8 +711,13 @@ static int schema_validate(lua_State* L)
   const char* doc = luaL_checkstring(L, 2);
 
   auto validator = new JSONSchemaValidator(scm, doc);
-  lua_pushboolean(L, validator->validate(L));
 
+  if (validator->validate(L)) {
+    StringStream s(doc);
+    return decode(L, &s);
+  }
+
+  lua_pushboolean(L, false);
   return 1;
 }
 

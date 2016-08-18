@@ -154,7 +154,6 @@ static int json_array(lua_State* L)
 // DECODE
 // -----------------------------------------------------------------------------
 
-
 struct Ctx {
 	Ctx() : fn_(&topFn){}
 	Ctx(const Ctx& rhs) : table_(rhs.table_), index(rhs.index), fn_(rhs.fn_)
@@ -200,6 +199,7 @@ private:
 	}
 };
 
+// http://rapidjson.org/md_doc_sax.html#Reader
 struct ToLuaHandler {
 	ToLuaHandler(lua_State* aL) : L(aL) { stack_.reserve(32); }
 
@@ -358,7 +358,7 @@ struct Key
 
 
 
-
+// http://rapidjson.org/md_doc_sax.html#Writer
 class Encoder {
 	bool pretty;
 	bool sort_keys;
@@ -675,50 +675,50 @@ static int json_dump(lua_State* L)
 // http://rapidjson.org/md_doc_schema.html
 class JSONSchemaValidator
 {
-  const char* schema;
-  const char* json_document;
+	const char* schema;
+	const char* json_document;
 
 public:
-  JSONSchemaValidator(const char* scm, const char* doc)
-    : schema{scm}, json_document{doc} {}
+	JSONSchemaValidator(const char* scm, const char* doc)
+		: schema{scm}, json_document{doc} {}
 
-  bool validate(lua_State* L)
-  {
-    Document sd;
-    if (sd.Parse(schema).HasParseError()) {
-      return luaL_error(L, "The JSON Schema is not a valid JSON document.");
-    }
+	bool validate(lua_State* L)
+	{
+		Document sd;
+		if (sd.Parse(schema).HasParseError()) {
+			return luaL_error(L, "The JSON Schema is not a valid JSON document.");
+		}
 
-    SchemaDocument schema_doc(sd);
-    SchemaValidator validator(schema_doc);
-    Document d;
+		SchemaDocument schema_doc(sd);
+		SchemaValidator validator(schema_doc);
+		Document d;
 
-    if (d.Parse(json_document).HasParseError()) {
-      return luaL_error(L, "Invalid JSON document.");
-    }
+		if (d.Parse(json_document).HasParseError()) {
+			return luaL_error(L, "Invalid JSON document.");
+		}
 
-    if (!d.Accept(validator)) {
-      return false;
-    }
+		if (!d.Accept(validator)) {
+			return false;
+		}
 
-    return true;
-  }
+		return true;
+	}
 };
 
 static int schema_validate(lua_State* L)
 {
-  const char* scm = luaL_checkstring(L, 1);
-  const char* doc = luaL_checkstring(L, 2);
+	const char* scm = luaL_checkstring(L, 1);
+	const char* doc = luaL_checkstring(L, 2);
 
-  auto validator = new JSONSchemaValidator(scm, doc);
+	auto validator = new JSONSchemaValidator(scm, doc);
 
-  if (validator->validate(L)) {
-    StringStream s(doc);
-    return decode(L, &s);
-  }
+	if (validator->validate(L)) {
+		StringStream s(doc);
+		return decode(L, &s);
+	}
 
-  lua_pushboolean(L, false);
-  return 1;
+	lua_pushboolean(L, false);
+	return 1;
 }
 
 // -----------------------------------------------------------------------------

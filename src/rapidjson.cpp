@@ -718,6 +718,8 @@ static int schema_validate(lua_State* L)
 	}
 
 	lua_pushboolean(L, false);
+
+	delete validator;
 	return 1;
 }
 

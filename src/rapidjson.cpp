@@ -680,7 +680,7 @@ class JSONSchemaValidator
 
 public:
 	JSONSchemaValidator(const char* scm, const char* doc)
-		: schema{scm}, json_document{doc} {}
+		: schema(scm), json_document(doc) {}
 
 	bool validate(lua_State* L)
 	{
@@ -710,7 +710,7 @@ static int schema_validate(lua_State* L)
 	const char* scm = luaL_checkstring(L, 1);
 	const char* doc = luaL_checkstring(L, 2);
 
-	auto validator = new JSONSchemaValidator(scm, doc);
+	JSONSchemaValidator* validator = new JSONSchemaValidator(scm, doc);
 
 	if (validator->validate(L)) {
 		StringStream s(doc);

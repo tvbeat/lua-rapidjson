@@ -26,13 +26,12 @@ endif()
 if(UNIX)
     if(APPLE)
         set(PLAT "macosx")
-        set(LINK_FLAGS "-bundle -undefined dynamic_lookup -all_load")
+        set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -bundle -undefined dynamic_lookup -all_load")
     else(APPLE)
         set(PLAT "linux")
-        set(LINK_FLAGS "-shared")
+        set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -shared")
     endif(APPLE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -fPIC -march=native")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -fPIC -march=native")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC")
 else(UNIX)
     if(WIN32)
         set(PLAT "win32")
@@ -43,12 +42,12 @@ else(UNIX)
 endif(UNIX)
 
 if(NOT LUA_INCLUDE_DIR OR (WIN32 AND NOT LUA_LIBRARIES))
-  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-  find_package(Lua REQUIRED)
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+    find_package(Lua REQUIRED)
 endif()
 
 if (NOT RAPIDJSON_INCLUDE_DIRS)
-  set(RAPIDJSON_INCLUDE_DIRS rapidjson/include)
+    set(RAPIDJSON_INCLUDE_DIRS rapidjson/include)
 endif()
 
 include_directories(${LUA_INCLUDE_DIR} ${RAPIDJSON_INCLUDE_DIRS})
@@ -72,18 +71,11 @@ if (WIN32)
     target_link_libraries(lua-rapidjson ${LUA_LIBRARIES})
 endif()
 
-if (LINK_FLAGS)
-    set_target_properties(lua-rapidjson PROPERTIES
-        LINK_FLAGS ${LINK_FLAGS}
-    )
-endif()
-
 set_target_properties(lua-rapidjson PROPERTIES
     OUTPUT_NAME "rapidjson"
     PREFIX ""
 )
 
-
 if (CMAKE_INSTALL_PREFIX)
-  install(TARGETS lua-rapidjson DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
+    install(TARGETS lua-rapidjson DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
 endif(CMAKE_INSTALL_PREFIX)
